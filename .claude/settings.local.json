@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest:*)",
+      "Bash(npm run:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(rm:*)",
+      "Bash(bash:*)",
+      "Bash(npx next:*)"
+    ]
+  }
+}
