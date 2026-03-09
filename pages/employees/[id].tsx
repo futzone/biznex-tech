@@ -11,6 +11,9 @@ import { useTransactions, useCreateTransaction } from "@/hooks/useTransactions";
 import { useDeviceTypes } from "@/hooks/useDeviceTypes";
 import { useClients } from "@/hooks/useClients";
 import { useAuth } from "@/context/AuthContext";
+import { useEmployeeMaterials } from "@/hooks/useEmployeeMaterials";
+import { useEmployeeCash, useEmployeeCashBalance } from "@/hooks/useEmployeeCash";
+import { useInstallations } from "@/hooks/useInstallations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +41,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Send, Undo2 } from "lucide-react";
+import { ArrowLeft, Send, Undo2, DollarSign, Boxes } from "lucide-react";
+import type { CashEntryType } from "@/lib/types";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -54,6 +58,17 @@ export default function EmployeeDetailPage() {
   const { data: transactions } = useTransactions({ employeeId: id });
   const { data: clients } = useClients();
   const { data: deviceTypes } = useDeviceTypes();
+  const { data: empMaterials } = useEmployeeMaterials(id);
+  const { data: cashEntries } = useEmployeeCash(id);
+  const { data: cashBalance } = useEmployeeCashBalance(id);
+  const { data: empInstallations } = useInstallations({ employeeId: id });
+
+  const cashTypeLabels: Record<CashEntryType, string> = {
+    received_from_client: "Mijozdan olindi",
+    spent_on_material: "Materialga sarflandi",
+    returned_to_company: "Kompaniyaga qaytarildi",
+    given_by_company: "Kompaniyadan berildi",
+  };
 
   const updateEmployeeStock = useUpdateEmployeeStock();
   const updateClientStock = useUpdateClientStock();
@@ -215,8 +230,11 @@ export default function EmployeeDetailPage() {
       </Card>
 
       <Tabs defaultValue="assignments">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="assignments">Topshiriqlar</TabsTrigger>
+          <TabsTrigger value="materials">Materiallar</TabsTrigger>
+          <TabsTrigger value="cash">Pul oqimi</TabsTrigger>
+          <TabsTrigger value="installations">O&apos;rnatishlar</TabsTrigger>
           <TabsTrigger value="expenses">Xarajatlar</TabsTrigger>
           <TabsTrigger value="transactions">Tranzaksiyalar</TabsTrigger>
         </TabsList>
@@ -250,6 +268,116 @@ export default function EmployeeDetailPage() {
                     <TableCell>
                       {format(new Date(a.assigned_date), "dd.MM.yyyy")}
                     </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </TabsContent>
+
+        <TabsContent value="materials" className="mt-4">
+          {empMaterials?.filter((m) => m.quantity !== 0).length === 0 ? (
+            <p className="text-muted-foreground text-sm">Materiallar yo&apos;q</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Material</TableHead>
+                  <TableHead className="text-right">Qoldiq</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {empMaterials
+                  ?.filter((m) => m.quantity !== 0)
+                  .map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell>{m.expand?.material_type?.name ?? m.material_type}</TableCell>
+                      <TableCell className="text-right font-mono">{m.quantity}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          )}
+        </TabsContent>
+
+        <TabsContent value="cash" className="mt-4">
+          <div className="mb-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Balans</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${(cashBalance ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  ${(cashBalance ?? 0).toFixed(2)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          {cashEntries?.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Pul yozuvlari yo&apos;q</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sana</TableHead>
+                  <TableHead>Turi</TableHead>
+                  <TableHead className="text-right">Summa ($)</TableHead>
+                  <TableHead>Tavsif</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cashEntries?.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell className="text-sm">
+                      {e.date ? format(new Date(e.date), "dd.MM.yyyy") : format(new Date(e.created), "dd.MM.yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{cashTypeLabels[e.type]}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {e.type === "received_from_client" || e.type === "given_by_company"
+                        ? `+$${e.amount_usd.toFixed(2)}`
+                        : `-$${e.amount_usd.toFixed(2)}`}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                      {e.description || "\u2014"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </TabsContent>
+
+        <TabsContent value="installations" className="mt-4">
+          {empInstallations?.length === 0 ? (
+            <p className="text-muted-foreground text-sm">O&apos;rnatishlar yo&apos;q</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mijoz</TableHead>
+                  <TableHead>Holat</TableHead>
+                  <TableHead>To&apos;lov turi</TableHead>
+                  <TableHead className="text-right">Summa ($)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {empInstallations?.map((inst) => (
+                  <TableRow key={inst.id}>
+                    <TableCell>
+                      <Link href={`/installations/${inst.id}`} className="text-primary hover:underline">
+                        {inst.expand?.client?.name ?? "\u2014"}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={inst.status === "accepted" ? "default" : inst.status === "submitted" ? "secondary" : "outline"}>
+                        {inst.status === "accepted" ? "Qabul qilingan" : inst.status === "submitted" ? "Topshirilgan" : "Qoralama"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{inst.payment_type === "rented" ? "Arenda" : "Sotib olingan"}</TableCell>
+                    <TableCell className="text-right font-mono">${inst.total_received_usd || 0}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

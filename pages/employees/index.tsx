@@ -291,7 +291,7 @@ export default function EmployeesPage() {
             <div className="space-y-2">
               <Label>Parol * (kamida 8 belgi)</Label>
               <Input
-                type="text"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Parol"

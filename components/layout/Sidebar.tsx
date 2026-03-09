@@ -14,6 +14,10 @@ import {
   UserCircle,
   Package,
   Truck,
+  FileText,
+  Boxes,
+  DollarSign,
+  CalendarCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -49,6 +53,11 @@ const navigation: NavItem[] = [
     roles: ["admin", "manager"],
   },
   {
+    name: "O'rnatishlar",
+    href: "/installations",
+    icon: FileText,
+  },
+  {
     name: "Topshiriqlar",
     href: "/assignments",
     icon: ClipboardList,
@@ -59,10 +68,33 @@ const navigation: NavItem[] = [
     icon: Receipt,
   },
   {
+    name: "Pul aylanmasi",
+    href: "/employee-cash",
+    icon: DollarSign,
+    roles: ["admin", "manager"],
+  },
+  {
+    name: "Oylik to'lovlar",
+    href: "/monthly-payments",
+    icon: CalendarCheck,
+    roles: ["admin", "manager"],
+  },
+  {
     name: "Yetkazib beruvchilar",
     href: "/suppliers",
     icon: Truck,
     roles: ["admin", "manager"],
+  },
+  {
+    name: "Material sotib olish",
+    href: "/material-purchases",
+    icon: Boxes,
+  },
+  {
+    name: "Material turlari",
+    href: "/materials",
+    icon: Boxes,
+    roles: ["admin"],
   },
   {
     name: "Sozlamalar",
@@ -76,6 +108,8 @@ const employeeNavigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Mening profilim", href: "/profile", icon: UserCircle },
   { name: "Mening devicelarim", href: "/my-devices", icon: Package },
+  { name: "O'rnatishlar", href: "/installations", icon: FileText },
+  { name: "Material sotib olish", href: "/material-purchases", icon: Boxes },
   { name: "Mijozlar", href: "/clients", icon: Building2 },
   { name: "Topshiriqlar", href: "/assignments", icon: ClipboardList },
   { name: "Xarajatlar", href: "/expenses", icon: Receipt },

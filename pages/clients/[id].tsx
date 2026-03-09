@@ -6,6 +6,9 @@ import { useClientStock } from "@/hooks/useClientStock";
 import { useAssignments } from "@/hooks/useAssignments";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useExpenses } from "@/hooks/useExpenses";
+import { useInstallationByClient } from "@/hooks/useInstallations";
+import { useInstallationDevices } from "@/hooks/useInstallationDevices";
+import { useInstallationMaterials } from "@/hooks/useInstallationMaterials";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, MapPin, Phone, User } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, User, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 const statusLabels: Record<string, string> = {
@@ -34,6 +37,9 @@ export default function ClientDetailPage() {
   const { data: client, isLoading } = useClient(id);
   const { data: stock } = useClientStock(id);
   const { data: clientExpenses } = useExpenses({ clientId: id });
+  const { data: installation } = useInstallationByClient(id);
+  const { data: instDevices } = useInstallationDevices(installation?.id || "");
+  const { data: instMaterials } = useInstallationMaterials(installation?.id || "");
 
   const totalExpenses = useMemo(
     () => clientExpenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0,
@@ -176,6 +182,81 @@ export default function ClientDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* O'rnatish formasi */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            O&apos;rnatish formasi
+          </CardTitle>
+          {installation && (
+            <Link href={`/installations/${installation.id}`}>
+              <Button variant="outline" size="sm">Batafsil</Button>
+            </Link>
+          )}
+        </CardHeader>
+        <CardContent>
+          {!installation ? (
+            <p className="text-muted-foreground text-sm">O&apos;rnatish formasi topilmadi</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant={installation.status === "accepted" ? "default" : installation.status === "submitted" ? "secondary" : "outline"}>
+                  {installation.status === "accepted" ? "Qabul qilingan" : installation.status === "submitted" ? "Topshirilgan" : "Qoralama"}
+                </Badge>
+                {installation.contract_number && (
+                  <span className="text-sm text-muted-foreground">#{installation.contract_number}</span>
+                )}
+                {installation.payment_type && (
+                  <Badge variant="outline">{installation.payment_type === "rented" ? "Arenda" : "Sotib olingan"}</Badge>
+                )}
+              </div>
+
+              {instDevices && instDevices.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Devicelar</p>
+                  <div className="flex flex-wrap gap-2">
+                    {instDevices.map((d) => (
+                      <Badge key={d.id} variant="secondary">
+                        {d.expand?.device_type?.name}: {d.quantity}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {instMaterials && instMaterials.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Materiallar</p>
+                  <div className="flex flex-wrap gap-2">
+                    {instMaterials.map((m) => (
+                      <Badge key={m.id} variant="secondary">
+                        {m.expand?.material_type?.name}: {m.quantity_used}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {installation.total_received_usd > 0 && (
+                  <div>
+                    <span className="text-muted-foreground">Olingan: </span>
+                    <span className="font-mono">${installation.total_received_usd}</span>
+                  </div>
+                )}
+                {installation.payment_type === "rented" && installation.monthly_payment_usd > 0 && (
+                  <div>
+                    <span className="text-muted-foreground">Oylik: </span>
+                    <span className="font-mono">${installation.monthly_payment_usd}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

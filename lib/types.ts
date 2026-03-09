@@ -107,6 +107,130 @@ export interface Assignment extends RecordModel {
   };
 }
 
+// ===== Installation System =====
+
+export interface MaterialType extends RecordModel {
+  name: string;
+  unit: "meter" | "piece" | "roll" | "kg";
+  is_active: boolean;
+}
+
+export type InstallationStatus = "draft" | "submitted" | "accepted";
+export type PaymentType = "purchased" | "rented";
+
+export interface Installation extends RecordModel {
+  client: string;
+  installer_employee: string;
+  contract_number: string;
+  installation_date: string;
+  payment_type: PaymentType;
+  monthly_payment_usd: number;
+  travel_expense_usd: number;
+  additional_expenses_usd: number;
+  installation_fee_usd: number;
+  total_received_usd: number;
+  exchange_rate: number;
+  notes: string;
+  status: InstallationStatus;
+  submitted_by: string;
+  accepted_by: string;
+  expand?: {
+    client?: Client;
+    installer_employee?: User;
+    submitted_by?: User;
+    accepted_by?: User;
+  };
+}
+
+export interface InstallationDevice extends RecordModel {
+  installation: string;
+  device_type: string;
+  quantity: number;
+  expand?: {
+    device_type?: DeviceType;
+  };
+}
+
+export interface InstallationMaterial extends RecordModel {
+  installation: string;
+  material_type: string;
+  quantity_used: number;
+  expand?: {
+    material_type?: MaterialType;
+  };
+}
+
+export interface EmployeeMaterial extends RecordModel {
+  employee: string;
+  material_type: string;
+  quantity: number;
+  expand?: {
+    employee?: User;
+    material_type?: MaterialType;
+  };
+}
+
+export interface MaterialPurchase extends RecordModel {
+  employee: string;
+  material_type: string;
+  quantity: number;
+  cost_usd: number;
+  for_client: string;
+  date: string;
+  notes: string;
+  expand?: {
+    employee?: User;
+    material_type?: MaterialType;
+    for_client?: Client;
+  };
+}
+
+export type CashEntryType =
+  | "received_from_client"
+  | "spent_on_material"
+  | "returned_to_company"
+  | "given_by_company";
+
+export interface EmployeeCash extends RecordModel {
+  employee: string;
+  type: CashEntryType;
+  amount_usd: number;
+  installation: string;
+  description: string;
+  date: string;
+  recorded_by: string;
+  expand?: {
+    employee?: User;
+    installation?: Installation;
+    recorded_by?: User;
+  };
+}
+
+export interface InstallationSettlement extends RecordModel {
+  installation: string;
+  money_returned_usd: number;
+  employee_salary_usd: number;
+  notes: string;
+  settled_by: string;
+  expand?: {
+    installation?: Installation;
+    settled_by?: User;
+  };
+}
+
+export interface MonthlyPayment extends RecordModel {
+  installation: string;
+  month: string;
+  amount_usd: number;
+  paid: boolean;
+  paid_date: string;
+  expand?: {
+    installation?: Installation;
+  };
+}
+
+// ===== Expenses =====
+
 export type ExpenseStatus = "pending" | "approved" | "rejected";
 
 export interface Expense extends RecordModel {

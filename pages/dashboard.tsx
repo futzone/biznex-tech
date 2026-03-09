@@ -5,6 +5,8 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useClients } from "@/hooks/useClients";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useAssignments } from "@/hooks/useAssignments";
+import { useInstallations } from "@/hooks/useInstallations";
+import { useMonthlyPayments } from "@/hooks/useMonthlyPayments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,6 +25,8 @@ import {
   Receipt,
   Package,
   ClipboardList,
+  FileText,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { TransactionType } from "@/lib/types";
@@ -50,6 +54,8 @@ function ManagerDashboard() {
   const { data: transactions } = useTransactions();
   const { data: clients } = useClients();
   const { data: expenses } = useExpenses();
+  const { data: installations } = useInstallations();
+  const { data: payments } = useMonthlyPayments();
 
   const warehouseTotal =
     warehouseStock?.reduce((sum, s) => sum + s.quantity, 0) ?? 0;
@@ -62,6 +68,12 @@ function ManagerDashboard() {
     expenses
       ?.filter((e) => e.status === "pending")
       .reduce((sum, e) => sum + e.amount, 0) ?? 0;
+
+  const totalInstallations = installations?.length ?? 0;
+  const draftInstallations = installations?.filter((i) => i.status === "draft").length ?? 0;
+  const submittedInstallations = installations?.filter((i) => i.status === "submitted").length ?? 0;
+  const unpaidPayments = payments?.filter((p) => !p.paid) ?? [];
+  const unpaidTotal = unpaidPayments.reduce((s, p) => s + p.amount_usd, 0);
 
   const recentTransactions = transactions?.slice(0, 10) ?? [];
 
@@ -110,6 +122,35 @@ function ManagerDashboard() {
             <div className="text-2xl font-bold">{pendingExpenses}</div>
             <p className="text-xs text-muted-foreground">
               {pendingExpenseTotal.toLocaleString()} so'm
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">O&apos;rnatishlar</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalInstallations}</div>
+            <p className="text-xs text-muted-foreground">
+              {draftInstallations > 0 && `${draftInstallations} qoralama`}
+              {draftInstallations > 0 && submittedInstallations > 0 && ", "}
+              {submittedInstallations > 0 && `${submittedInstallations} topshirilgan`}
+              {draftInstallations === 0 && submittedInstallations === 0 && "barchasi qabul qilingan"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">To&apos;lanmagan oyliklar</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{unpaidPayments.length}</div>
+            <p className="text-xs text-muted-foreground">
+              ${unpaidTotal.toFixed(2)} jami
             </p>
           </CardContent>
         </Card>
@@ -184,6 +225,51 @@ function ManagerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {unpaidPayments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              To&apos;lanmagan oylik to&apos;lovlar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mijoz</TableHead>
+                  <TableHead>Oy</TableHead>
+                  <TableHead className="text-right">Summa ($)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {unpaidPayments.slice(0, 10).map((p) => {
+                  const inst = installations?.find((i) => i.id === p.installation);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <Link href={`/installations/${p.installation}`} className="text-primary hover:underline">
+                          {inst?.expand?.client?.name ?? "\u2014"}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{format(new Date(p.month), "MMMM yyyy")}</TableCell>
+                      <TableCell className="text-right font-mono">${p.amount_usd.toFixed(2)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {unpaidPayments.length > 10 && (
+              <Link href="/monthly-payments">
+                <Button variant="link" className="mt-2 px-0">
+                  Hammasini ko&apos;rish ({unpaidPayments.length})
+                </Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

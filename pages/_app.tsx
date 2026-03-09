@@ -50,6 +50,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     setMounted(true);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
   }, []);
 
   if (!mounted) return null;
